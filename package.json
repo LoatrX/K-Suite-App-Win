@@ -1,0 +1,31 @@
+{
+  "name": "k-suite-workstation",
+  "productName": "K-Suite",
+  "version": "2.0.0",
+  "description": "K-Suite Workstation - En collaboration avec Infomaniak",
+  "main": "src/main/main.js",
+  "author": "Loatrix <loan@schoning.ch>",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "ch.schoning.ksuite",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

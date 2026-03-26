@@ -1,0 +1,11 @@
+CONTRAT DE LICENCE UTILISATEUR FINAL (CLUF) - K-SUITE
+
+ACCORD : En utilisant cette application, vous acceptez les conditions d'utilisation d'Infomaniak Network SA.
+
+PROPRIÉTÉ : K-Suite est un outil développé pour faciliter l'accès aux services Infomaniak.
+
+DONNÉES : Vos identifiants sont stockés localement sur votre machine via le chiffrement natif de Windows (SafeStorage).
+
+RESPONSABILITÉ : L'auteur ne peut être tenu responsable des interruptions de service des plateformes tierces. Celui.ci met en place un logiciel avec des normes de securité vue dans ses cours professionnel, aucun logiciel n'est sur à 100% !
+
+Fait à Genève, 2026.

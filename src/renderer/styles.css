@@ -1,0 +1,258 @@
+/* VARIABLES ET THÈMES */
+:root {
+    --bg-color: #f4f7f9;
+    --text-color: #333;
+    --accent-color: #0070f3;
+    --toolbar-bg: #ffffff;
+    --border-color: #d1d9e0;
+    --modal-bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e0e0e0;
+        --toolbar-bg: #2d2d2d;
+        --border-color: #444;
+        --modal-bg: #2d2d2d;
+    }
+}
+
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+p {
+    text-align: center;
+}
+
+
+/* SPLASH SCREEN */
+#splash-screen {
+    position: fixed; z-index: 10000;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-color);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+}
+
+#splash-logo {
+    max-width: 120px; max-height: 120px;
+    margin-bottom: 25px;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.loader {
+    border: 3px solid rgba(0,0,0,0.1);
+    border-left-color: var(--accent-color);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.7; }
+}
+
+/* TOOLBAR */
+.toolbar {
+    height: 50px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid #ddd;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+}
+
+.view-btn {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.view-btn:hover {
+    color: #007aff;
+    transform: translateY(-2px);
+}
+
+.view-btn.active {
+    color: #007aff;
+    border-bottom: 2px solid #007aff;
+}
+
+.app-icon-svg {
+    max-width: 28px; max-height: 28px;
+    margin-right: 12px;
+    object-fit: contain;
+}
+
+.branding { display: flex; align-items: center; font-weight: 600; font-size: 14px; }
+
+.search-bar {
+    flex-grow: 1; max-width: 500px;
+    margin: 0 20px; display: flex;
+}
+
+.search-bar input {
+    flex-grow: 1; padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px 0 0 6px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    outline: none;
+}
+
+#search-btn {
+    background: var(--accent-color);
+    border: none; color: white;
+    padding: 0 15px; cursor: pointer;
+    border-radius: 0 6px 6px 0;
+    display: flex; align-items: center;
+}
+
+/* BOUTONS DE CONTRÔLE */
+.window-controls { display: flex; gap: 8px; }
+
+.view-btn, #settings-btn {
+    background: transparent; border: 1px solid transparent;
+    padding: 6px; cursor: pointer; border-radius: 6px;
+    color: var(--text-color); transition: all 0.2s;
+}
+
+.view-btn:hover, #settings-btn:hover {
+    background: rgba(0,0,0,0.05);
+    border-color: var(--border-color);
+}
+
+.view-btn.active {
+    color: var(--accent-color);
+    background: rgba(0, 112, 243, 0.1);
+}
+
+/* GRILLE DES VOLETS */
+#views-container {
+    display: grid;
+    background-color: #2c2c2c; /* Couleur de la bordure fine */
+    gap: 1px; /* C'est ce qui crée la séparation entre les volets */
+    height: calc(100vh - 51px);
+    width: 100%;
+    overflow: hidden;
+}
+
+.grid-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.grid-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.view-placeholder {
+    background: var(--bg-color);
+    display: flex; justify-content: center; align-items: center;
+    color: #888; font-size: 12px;
+}
+
+/* MODALE PARAMÈTRES */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    
+    /* Animation de départ */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 450px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.modal.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 15px 20px; border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.modal-header h2 { margin: 0; font-size: 16px; }
+
+.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-color); }
+
+.modal-body { padding: 10px 20px 20px; }
+
+.setting-item {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-item.column { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+.path-group {
+    display: flex;
+    gap: 10px;
+}
+
+.path-group input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.path-selector { display: flex; width: 100%; gap: 8px; }
+
+.path-selector input { flex-grow: 1; padding: 6px; font-size: 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); }
+
+#btn-browse-path { padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-color); }
+
+.credits { margin-top: 25px; text-align: center; font-size: 11px; opacity: 0.6; }
+
+#view-splitter {
+    position: absolute;
+    top: 51px; /* Sous la barre d'outils */
+    bottom: 0;
+    width: 6px;
+    background: rgba(0, 122, 255, 0.2); /* Couleur bleutée légère */
+    cursor: col-resize;
+    z-index: 1000;
+    transition: background 0.2s;
+    transform: translateX(-50%); /* Centré sur le point de contact */
+}
+
+#view-splitter:hover {
+    background: rgba(0, 122, 255, 0.8); /* Bleu plus fort au survol */
+}
+
+/* On change le curseur pendant le redimensionnement */
+body.resizing {
+    cursor: col-resize;
+    user-select: none;
+}

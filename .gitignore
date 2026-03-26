@@ -1,0 +1,20 @@
+Dépendances
+
+node_modules/
+dist/
+
+Configuration locale & Logs
+
+.env
+.log
+npm-debug.log
+
+Electron Store (Données locales de test)
+
+AppData/
+*.json.bak
+
+OS
+
+.DS_Store
+Thumbs.db
