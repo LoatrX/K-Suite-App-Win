@@ -1,12 +1,12 @@
 {
   "name": "k-suite",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "main": "src/main/main.js",
   "author": "Loatrix <loan@schoning.ch>",
   "scripts": {
     "start": "electron .",
     "build:win": "electron-builder --win"
-    },
+  },
   "build": {
     "appId": "com.infomaniak.ksuite",
     "productName": "K-Suite",
@@ -34,7 +34,8 @@
   },
   "description": "**K-Suite Workstation** est une application de productivité basée sur Electron, conçue pour centraliser et optimiser l'utilisation de l'écosystème Infomaniak (Manager, Mail, kDrive, SwissTransfer).",
   "devDependencies": {
-    "electron": "^41.1.0"
+    "electron": "^41.1.0",
+    "electron-builder": "^26.8.1"
   },
   "repository": {
     "type": "git",
