@@ -1,153 +1,187 @@
-/**
- * K-Suite Workstation - Renderer Process
- * Gère les interactions de l'interface utilisateur, les paramètres et les animations.
- */
+const { ipcRenderer } = require('electron');
 
-// Éléments UI
-const urlInput = document.getElementById('url-input');
-const searchBtn = document.getElementById('search-btn');
+let activePanes = 0;
+const maxPanes = 2; // Limité à 2 comme demandé
+const viewsContainer = document.getElementById('views-container');
 const splashScreen = document.getElementById('splash-screen');
 const appContainer = document.getElementById('app-container');
-const toolbar = document.querySelector('.toolbar');
 
-// Éléments Modale Paramètres
-const settingsBtn = document.getElementById('settings-btn');
-const settingsModal = document.getElementById('settings-modal');
-const closeSettings = document.getElementById('close-settings');
-const themeSelect = document.getElementById('select-theme');
-const downloadPathInput = document.getElementById('input-download-path');
-const browsePathBtn = document.getElementById('btn-browse-path');
-const autoStartCheck = document.getElementById('check-autostart');
-const backgroundCheck = document.getElementById('check-background');
+// URLs des services
+const SERVICES = {
+    dashboard: 'https://ksuite.infomaniak.com/all',
+    mail: 'https://mail.infomaniak.com',
+    drive: 'https://kdrive.infomaniak.com',
+    transfer: 'https://www.swisstransfer.com'
+};
 
-// 1. GESTION DU DÉMARRAGE (Splash Screen)
-window.api.onAppReady(() => {
-    if (splashScreen) {
+// Initialisation
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
         splashScreen.style.opacity = '0';
-        splashScreen.style.transition = 'opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
         setTimeout(() => {
             splashScreen.style.display = 'none';
-            if (appContainer) {
-                appContainer.style.display = 'block';
-                appContainer.style.animation = 'fadeIn 0.8s ease-out';
-            }
+            appContainer.style.display = 'block';
+            openView('dashboard');
         }, 500);
+    }, 2000);
+
+    setupEventListeners();
+    setupDownloadButton();
+    loadSettings();
+});
+
+// Gestion des volets
+function openView(serviceKey) {
+    if (activePanes >= maxPanes) {
+        alert('Maximum de 2 volets atteints. Fermez-en un pour en ouvrir un autre.');
+        return;
+    }
+    const url = SERVICES[serviceKey] || serviceKey;
+    createPane(serviceKey.toUpperCase(), url);
+}
+
+function createPane(title, url) {
+    const pane = document.createElement('div');
+    pane.className = 'view-pane';
+    
+    const header = document.createElement('div');
+    header.className = 'pane-header';
+    header.innerHTML = `<span>${title}</span><span class="close-pane">×</span>`;
+    
+    const webview = document.createElement('webview');
+    webview.src = url;
+    webview.setAttribute('allowpopups', 'true');
+    webview.style.flex = '1';
+
+    pane.appendChild(header);
+    pane.appendChild(webview);
+    viewsContainer.appendChild(pane);
+
+    header.querySelector('.close-pane').addEventListener('click', () => {
+        pane.remove();
+        activePanes--;
+        updateLayout();
+    });
+
+    activePanes++;
+    updateLayout();
+}
+
+function updateLayout() {
+    viewsContainer.className = ''; // Reset
+    if (activePanes === 1) viewsContainer.classList.add('grid-1');
+    else if (activePanes >= 2) viewsContainer.classList.add('grid-2');
+}
+
+// Boutons de vue
+document.getElementById('btn-view-1').addEventListener('click', () => {
+    if (activePanes > 1) {
+        // Fermer les volets supplémentaires
+        const panes = document.querySelectorAll('.view-pane');
+        for (let i = 1; i < panes.length; i++) panes[i].remove();
+        activePanes = 1;
+    }
+    updateLayout();
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-view-1').classList.add('active');
+});
+
+document.getElementById('btn-view-2').addEventListener('click', () => {
+    if (activePanes < 2) openView('dashboard');
+    updateLayout();
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-view-2').classList.add('active');
+});
+
+// Recherche
+document.getElementById('search-btn').addEventListener('click', () => {
+    const url = document.getElementById('url-input').value;
+    if (url.includes('infomaniak.com') || url.includes('swisstransfer.com')) {
+        openView(url);
+    } else {
+        alert('Veuillez entrer un lien valide Infomaniak ou SwissTransfer.');
     }
 });
 
-// 2. BARRE DE RECHERCHE ET ANIMATIONS NAV
-if (searchBtn && urlInput) {
-    const executeSearch = () => {
-        const query = urlInput.value.trim();
-        if (query) window.api.searchUrl(query);
+// Paramètres
+const modal = document.getElementById('settings-modal');
+document.getElementById('settings-btn').addEventListener('click', () => {
+    loadSettings();
+    modal.classList.add('active');
+});
+document.getElementById('close-settings').addEventListener('click', () => modal.classList.remove('active'));
+document.getElementById('save-settings-btn').addEventListener('click', () => {
+    const settings = {
+        theme: document.getElementById('select-theme').value,
+        downloadPath: document.getElementById('setting-download-path').value,
+        startOnBoot: document.getElementById('check-autostart').checked,
+        runInBackground: document.getElementById('check-background').checked
     };
+    ipcRenderer.send('save-settings', settings);
+    modal.classList.remove('active');
+    alert('Paramètres enregistrés !');
+});
 
-    searchBtn.onclick = executeSearch;
-    urlInput.onkeypress = (e) => {
-        if (e.key === 'Enter') executeSearch();
-    };
+function loadSettings() {
+    ipcRenderer.send('get-settings');
 }
 
-// Animation fluide de la toolbar au survol
-if (toolbar) {
-    window.addEventListener('mousemove', (e) => {
-        if (e.clientY < 60) {
-            toolbar.style.transform = 'translateY(0)';
-            toolbar.style.opacity = '1';
+ipcRenderer.on('settings-loaded', (event, settings) => {
+    document.getElementById('select-theme').value = settings.theme || 'system';
+    document.getElementById('setting-download-path').value = settings.downloadPath || '';
+    document.getElementById('check-autostart').checked = settings.startOnBoot || false;
+    document.getElementById('check-background').checked = settings.runInBackground || false;
+});
+
+document.getElementById('btn-browse-path').addEventListener('click', () => {
+    // Demande au processus principal d'ouvrir le dialog
+    ipcRenderer.invoke('change-download-path').then(path => {
+        document.getElementById('setting-download-path').value = path;
+    });
+});
+
+// Gestion des téléchargements (Point 5)
+function setupDownloadButton() {
+    const btn = document.getElementById('btn-downloads');
+    const dropdown = document.getElementById('dl-dropdown');
+    const dlList = document.getElementById('dl-list');
+    const badge = document.getElementById('dl-badge');
+
+    btn.addEventListener('mouseenter', () => { dropdown.style.display = 'block'; });
+    dropdown.addEventListener('mouseleave', () => { setTimeout(() => dropdown.style.display = 'none', 200); });
+
+    // Réception des événements du processus principal
+    ipcRenderer.on('download-progress', (event, data) => {
+        badge.style.display = 'block';
+        badge.innerText = Math.round(data.progress * 100) + '%';
+        btn.style.color = '#0070f3';
+        
+        // Mise à jour liste
+        const item = dlList.querySelector(`[data-file="${data.filename}"]`);
+        if (item) {
+            item.querySelector('.status').innerText = `${Math.round(data.progress * 100)}%`;
         }
+    });
+
+    ipcRenderer.on('download-complete', (event, data) => {
+        badge.style.display = 'none';
+        btn.style.color = '';
+        
+        const div = document.createElement('div');
+        div.className = 'dl-item';
+        div.setAttribute('data-file', data.filename);
+        div.innerHTML = `<span>${data.filename}</span><span class="status" style="color:green">Terminé</span>`;
+        dlList.prepend(div);
+        
+        if (dlList.innerText.includes('Aucun')) dlList.innerHTML = '';
+        dlList.prepend(div);
     });
 }
 
-// 3. LOGO / BRANDING (Retour à l'accueil)
-const branding = document.querySelector('.branding');
-if (branding) {
-    branding.onclick = () => {
-        // Animation de retour
-        branding.style.transform = 'scale(0.95)';
-        setTimeout(() => branding.style.transform = 'scale(1)', 100);
-        window.api.goHome();
-    };
-}
-
-// 4. BOUTONS DE CHANGEMENT DE VUE
-const setupViewButton = (id, mode) => {
-    const btn = document.getElementById(id);
-    if (btn) {
-        btn.onclick = () => {
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            window.api.changeViewMode(mode);
-        };
-    }
+window.openDownloadsFolder = function() {
+    ipcRenderer.send('open-downloads-folder');
 };
 
-setupViewButton('btn-view-1', 1);
-setupViewButton('btn-view-2', 2);
-setupViewButton('btn-view-4', 4);
-
-// 5. GESTION DES PARAMÈTRES (MODALE & SAVE)
-if (settingsBtn && settingsModal) {
-    settingsBtn.onclick = () => {
-        settingsModal.classList.add('active');
-    };
+function setupEventListeners() {
+    // Ajoute ici d'autres écouteurs si nécessaire
 }
-
-if (closeSettings) {
-    closeSettings.onclick = () => {
-        settingsModal.classList.remove('active');
-    };
-}
-
-// Fermer la modale en cliquant à côté
-window.onclick = (event) => {
-    if (event.target === settingsModal) {
-        settingsModal.classList.remove('active');
-    }
-};
-
-// Événements de sauvegarde des réglages
-if (themeSelect) {
-    themeSelect.onchange = (e) => window.api.saveSetting('theme', e.target.value);
-}
-
-if (autoStartCheck) {
-    autoStartCheck.onchange = (e) => window.api.saveSetting('autoStart', e.target.checked);
-}
-
-if (backgroundCheck) {
-    backgroundCheck.onchange = (e) => window.api.saveSetting('runInBackground', e.target.checked);
-}
-
-if (browsePathBtn) {
-    browsePathBtn.onclick = async () => {
-        const path = await window.api.selectFolder();
-        if (path) {
-            downloadPathInput.value = path;
-            window.api.saveSetting('downloadPath', path);
-        }
-    };
-}
-
-// 6. INITIALISATION DES DONNÉES
-async function initializeUI() {
-    try {
-        const settings = await window.api.getSettings();
-        
-        // Appliquer le mode de vue
-        const currentMode = settings.viewMode || 1;
-        window.api.changeViewMode(currentMode);
-        const activeBtn = document.getElementById(`btn-view-${currentMode}`);
-        if (activeBtn) activeBtn.classList.add('active');
-
-        // Remplir la modale avec les valeurs actuelles
-        if (themeSelect) themeSelect.value = settings.theme || 'system';
-        if (downloadPathInput) downloadPathInput.value = settings.downloadPath || '';
-        if (autoStartCheck) autoStartCheck.checked = settings.autoStart || false;
-        if (backgroundCheck) backgroundCheck.checked = settings.runInBackground || false;
-
-    } catch (error) {
-        console.error("Erreur d'initialisation du renderer:", error);
-    }
-}
-
-initializeUI();

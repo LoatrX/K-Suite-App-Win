@@ -1,12 +1,13 @@
+// Import du module de stockage sécurisé (CORRECT)
 const SecureStorage = require('../modules/secure-storage');
-const Store = require('electron-store');
-const store = new Store();
 
 class AuthService {
+    // Sauvegarde le token (sécurisé) et l'email (normal)
     async saveCredentials(email, token) {
         try {
-            SecureStorage.set('auth_token', token);
-            store.set('auth_email', email);
+            SecureStorage.setSecure('auth_token', token);
+            SecureStorage.set('auth_email', email);
+            console.log("Identifiants sauvegardés avec succès.");
             return true;
         } catch (e) {
             console.error("Erreur de stockage sécurisé", e);
@@ -14,14 +15,23 @@ class AuthService {
         }
     }
 
+    // Récupère le token
     getToken() {
-        return SecureStorage.get('auth_token');
+        return SecureStorage.getSecure('auth_token');
     }
 
+    // Récupère l'email
+    getEmail() {
+        return SecureStorage.get('auth_email');
+    }
+
+    // Déconnexion complète
     logout() {
-        store.delete('auth_email');
+        SecureStorage.delete('auth_email');
         SecureStorage.delete('auth_token');
+        console.log("Déconnexion effectuée.");
     }
 }
 
+// Export d'une instance unique
 module.exports = new AuthService();

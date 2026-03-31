@@ -1,42 +1,44 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
-/**
- * K-Suite Workstation - Preload Script
- * Sécurise l'accès aux APIs Electron pour le rendu.
- */
-contextBridge.exposeInMainWorld('api', {
-    // --- ÉVÉNEMENTS SYSTÈME ---
-    // Signal que l'app est prête (pour cacher le splash screen)
-    onAppReady: (callback) => {
-        ipcRenderer.on('app-ready', () => callback());
+contextBridge.exposeInMainWorld('ksuiteAPI', {
+    send: (channel, data) => {
+        const validChannels = ['save-settings', 'get-settings', 'trigger-refresh', 'logout', 'open-downloads-folder'];
+        if (validChannels.includes(channel)) {
+            ipcRenderer.send(channel, data);
+        }
     },
-    
-    // --- GESTION DES RÉGLAGES ---
-    // Récupère tous les paramètres stockés (thème, chemin, etc.)
-    getSettings: () => ipcRenderer.invoke('get-settings'),
-    
-    // Sauvegarde un paramètre spécifique
-    saveSetting: (key, value) => ipcRenderer.send('save-setting', key, value),
-    
-    // --- NAVIGATION ET VUES ---
-    // Change le mode de disposition (1, 2 ou 4 volets)
-    changeViewMode: (mode) => ipcRenderer.send('change-view-mode', mode),
-    
-    // Met à jour la position du séparateur en mode 2 volets
-    updateDivider: (xPercent) => ipcRenderer.send('update-divider', xPercent),
-    
-    // Lance une recherche ou ouvre une URL dans le volet principal
-    searchUrl: (url) => ipcRenderer.send('search-url', url),
-    
-    // Réinitialise tous les volets aux URLs par défaut (Home)
-    goHome: () => ipcRenderer.send('go-home'),
-    
-    // --- DIALOGUES ET SYSTÈME ---
-    // Ouvre l'explorateur de fichiers pour choisir un dossier de téléchargement
-    selectFolder: () => ipcRenderer.invoke('select-folder'),
-    
-    // Permet d'écouter d'éventuels messages d'erreur ou notifications
-    onMessage: (callback) => {
-        ipcRenderer.on('display-message', (event, message) => callback(message));
-    }
+    on: (channel, callback) => {
+        const validChannels = ['settings-loaded', 'theme-changed', 'download-progress', 'download-complete'];
+        if (validChannels.includes(channel)) {
+            ipcRenderer.on(channel, (event, ...args) => callback(...args));
+        }
+    },
+    setZoom: (level) => webFrame.setZoomLevel(level)
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    // Drag & Drop
+    document.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }, { passive: false });
+    document.addEventListener('drop', (e) => { e.preventDefault(); }, { passive: false });
+
+    // Injection Cookies & Refresh
+    const script = document.createElement('script');
+    script.textContent = 
+        (function() {
+            function autoAcceptCookies() {
+                const selectors = ['button[data-testid="cookie-accept"]', 'button[class*="accept"]', '.cookie-btn', '#onetrust-accept-btn'];
+                for (let s of selectors) {
+                    const btn = document.querySelector(s);
+                    if (btn) { btn.click(); return true; }
+                }
+                return false;
+            }
+            if (!autoAcceptCookies()) {
+                const observer = new MutationObserver(() => { if (autoAcceptCookies()) observer.disconnect(); });
+                observer.observe(document.body, { childList: true, subtree: true });
+            }
+            window.refreshKSuiteData = function() { console.log('Refresh K-Suite'); };
+        })();
+    ;
+    document.head.appendChild(script);
 });

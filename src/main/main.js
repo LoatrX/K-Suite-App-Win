@@ -1,283 +1,276 @@
-const { app, BrowserWindow, BrowserView, ipcMain, Tray, Menu, nativeTheme, Notification, session, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, nativeTheme, dialog, session } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
-const authService = require('./auth-service');
+const AuthManager = require('./auth-service');
+const { download } = require('electron-dl'); // Gestion des téléchargements
 
+// Configuration du Store
 const store = new Store({
     defaults: {
-        runInBackground: true,
-        autoStart: false,
         theme: 'system',
+        zoomLevel: 0,
+        autoRefreshInterval: 0,
         downloadPath: app.getPath('downloads'),
-        viewMode: 1,
-        mainApp: 'manager'
+        startOnBoot: false,
+        runInBackground: false
     }
 });
 
-let mainWindow;
-let tray = null;
-let views = [];
-const TOOLBAR_HEIGHT = 51;
-let dividerX = 0.5;
-const BORDER_SIZE = 1; // Taille de la bordure entre les volets
+let mainWindows = [];
+let authWindow = null;
 
-const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-    app.quit();
-} else {
-    app.on('second-instance', () => {
-        if (mainWindow) {
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
+// --- Création de Fenêtre ---
+function createWindow(url = 'https://ksuite.infomaniak.com/all', options = {}) {
+    const isAuth = options.isAuth || false;
+    
+    const win = new BrowserWindow({
+        width: options.width || 1280,
+        height: options.height || 800,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+            webviewTag: true,
+            partition: 'persist:ksuite',
+            webSecurity: false, 
+            allowRunningInsecureContent: true,
+            sandbox: false,
+            // Activation du correcteur orthographique
+            spellcheck: true 
+        },
+        icon: path.join(__dirname, '../build-resources/icon.ico'),
+        show: false,
+        backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e1e' : '#ffffff',
+        frame: !isAuth,
+    });
+
+    // User-Agent pour éviter les blocages
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    win.webContents.setUserAgent(userAgent);
+    session.defaultSession.setUserAgent(userAgent);
+
+    win.webContents.setZoomLevel(store.get('zoomLevel'));
+
+    win.webContents.on('did-finish-load', () => {
+        win.show();
+        win.focus();
+    });
+
+    win.loadURL(url);
+
+    // Gestion des liens externes
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        if (!url.includes('infomaniak.com') && !url.includes('swisstransfer.com') && !url.includes('127.0.0.1')) {
+            shell.openExternal(url);
+            return { action: 'deny' };
         }
+        return { action: 'allow' };
     });
 
-    app.whenReady().then(() => {
-        createWindow();
-        setupSystemTray();
-        applySettings();
-        setupDownloadManager();
-        buildApplicationMenu();
+    // --- GESTION DES TÉLÉCHARGEMENTS (Point 5) ---
+    // Intercepter les téléchargements pour utiliser electron-dl
+    win.webContents.session.on('will-download', (event, item, webContents) => {
+        const savePath = store.get('downloadPath');
+        item.setSavePath(path.join(savePath, item.getFilename()));
+        
+        item.on('updated', (event, state) => {
+            if (state === 'progressing') {
+                if (!item.isPaused()) {
+                    // Envoyer la progression à l'interface
+                    const progress = item.getReceivedBytes() / item.getTotalBytes();
+                    mainWindows.forEach(w => w.webContents.send('download-progress', {
+                        filename: item.getFilename(),
+                        progress: progress,
+                        total: item.getTotalBytes(),
+                        received: item.getReceivedBytes()
+                    }));
+                }
+            }
+        });
+
+        item.once('done', (event, state) => {
+            if (state === 'completed') {
+                console.log('Téléchargement terminé:', item.getSavePath());
+                mainWindows.forEach(w => w.webContents.send('download-complete', {
+                    filename: item.getFilename(),
+                    path: item.getSavePath()
+                }));
+            } else {
+                console.log('Téléchargement échoué:', state);
+            }
+        });
     });
+
+    if (!isAuth) {
+        mainWindows.push(win);
+        win.on('closed', () => {
+            mainWindows = mainWindows.filter(w => w !== win);
+        });
+    } else {
+        authWindow = win;
+        win.on('closed', () => { authWindow = null; });
+    }
+
+    return win;
 }
 
-// --- GESTION DU MENU (FILE, APPS, AFFICHAGE) ---
-function buildApplicationMenu() {
-    const isLoggedIn = !!authService.getToken();
-    const currentMain = store.get('mainApp');
-
+// --- Création du Menu (avec Correcteur Orthographique) ---
+function createMenu() {
     const template = [
         {
-            label: 'Fichier',
+            label: 'K-Suite',
             submenu: [
-                {
-                    label: currentMain === 'manager' ? 'Passer à K-Suite' : 'Passer au Manager',
-                    click: () => {
-                        const next = currentMain === 'manager' ? 'ksuite' : 'manager';
-                        store.set('mainApp', next);
-                        const url = next === 'manager' ? 'https://manager.infomaniak.com/' : 'https://ksuite.infomaniak.com/';
-                        views[0].webContents.loadURL(url);
-                        buildApplicationMenu();
-                    }
-                },
+                { label: 'Nouveau Volet (Double)', accelerator: 'CmdOrCtrl+T', click: () => createWindow() },
+                { label: 'Paramètres...', click: () => openSettings() },
                 { type: 'separator' },
-                {
-                    label: 'Se connecter',
-                    enabled: !isLoggedIn,
-                    click: () => {
-                        // Logique de login (ouverture de la page login Infomaniak)
-                        views[0].webContents.loadURL('https://login.infomaniak.com/');
-                    }
-                },
-                {
-                    label: 'Se déconnecter',
-                    enabled: isLoggedIn,
-                    click: async () => {
-                        const { response } = await dialog.showMessageBox({
-                            type: 'question',
-                            buttons: ['Annuler', 'Se déconnecter'],
-                            title: 'Confirmation',
-                            message: 'Voulez-vous vraiment vous déconnecter et supprimer vos cookies de session ?'
-                        });
-
-                        if (response === 1) {
-                            const sharedSession = session.fromPartition('persist:ksuite_shared');
-                            await sharedSession.clearStorageData({
-                                storages: ['cookies', 'localstorage', 'cache']
-                            });
-                            authService.logout();
-                            buildApplicationMenu();
-                            views.forEach(v => v.webContents.reload());
-                        }
-                    }
-                },
-                { type: 'separator' },
-                { role: 'quit', label: 'Quitter' }
+                { label: 'Quitter', accelerator: 'CmdOrCtrl+Q', role: 'quit' }
             ]
         },
         {
-            label: 'Apps',
+            label: 'Édition',
             submenu: [
-                { label: 'Mail', click: () => views[0].webContents.loadURL('https://mail.infomaniak.com/') },
-                { label: 'kDrive', click: () => views[0].webContents.loadURL('https://kdrive.infomaniak.com/') },
-                { label: 'kChat', click: () => views[0].webContents.loadURL('https://kchat.infomaniak.com/') },
+                { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+                { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
                 { type: 'separator' },
-                {
-                    label: 'Collaboratif',
-                    submenu: [
-                        { label: 'Calendrier', click: () => views[0].webContents.loadURL('https://calendar.infomaniak.com/') },
-                        { label: 'Contacts', click: () => views[0].webContents.loadURL('https://contacts.infomaniak.com/') },
-                        { label: 'kMeeting', click: () => views[0].webContents.loadURL('https://kmeeting.infomaniak.com/') }
-                    ]
-                },
-                {
-                    label: 'Outils',
-                    submenu: [
-                        { label: 'SwissTransfer', click: () => views[0].webContents.loadURL('https://www.swisstransfer.com/') },
-                        { label: 'Gestionnaire de mots de passe', click: () => views[0].webContents.loadURL('https://manager.infomaniak.com/password') }
-                    ]
-                }
+                // Point 2 : Correcteur Orthographique
+                { label: 'Vérification orthographique', type: 'checkbox', checked: true, click: (menuItem) => {
+                    mainWindows.forEach(win => {
+                        win.webContents.session.setSpellCheckerEnabled(menuItem.checked);
+                    });
+                }},
+                { label: 'Langue du correcteur', submenu: [
+                    { label: 'Français (France)', click: () => setSpellLanguage('fr-FR') },
+                    { label: 'Anglais (US)', click: () => setSpellLanguage('en-US') },
+                    { label: 'Allemand', click: () => setSpellLanguage('de-DE') }
+                ]}
             ]
         },
         {
             label: 'Affichage',
             submenu: [
-                { role: 'reload', label: 'Actualiser' },
+                { label: 'Mode Sombre', type: 'radio', checked: store.get('theme') === 'dark', click: () => setTheme('dark') },
+                { label: 'Mode Clair', type: 'radio', checked: store.get('theme') === 'light', click: () => setTheme('light') },
+                { label: 'Système', type: 'radio', checked: store.get('theme') === 'system', click: () => setTheme('system') },
                 { type: 'separator' },
-                { role: 'togglefullscreen', label: 'Plein écran (F11)' },
-                { role: 'resetzoom', label: 'Zoom réel' },
-                { role: 'zoomin', label: 'Zoom avant' },
-                { role: 'zoomout', label: 'Zoom arrière' },
+                { role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' },
                 { type: 'separator' },
-                { role: 'toggledevtools', label: 'Outils de développement' }
+                { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }
+            ]
+        },
+        {
+            label: 'Aide',
+            submenu: [
+                { label: 'Centre d\'aide Infomaniak', click: () => shell.openExternal('https://www.infomaniak.com/fr/support') },
+                { label: 'Contacter le support', click: () => shell.openExternal('https://manager.infomaniak.com/v3/support') },
+                { type: 'separator' },
+                { 
+                    label: 'À propos de K-Suite App', 
+                    click: () => {
+                        dialog.showMessageBox({
+                            type: 'info',
+                            title: 'À propos',
+                            message: 'K-Suite App v1.0',
+                            detail: 'Développé par Loan Schöning'
+                        });
+                    }
+                }
             ]
         }
     ];
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
 }
 
-function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
-        minWidth: 900,
-        minHeight: 600,
-        icon: path.join(__dirname, '../../assets/icons/icon.ico'),
-        webPreferences: {
-            preload: path.join(__dirname, '../preload/preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false
-        }
-    });
-
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-    setupViews();
-
-    mainWindow.on('resize', () => {
-        updateViewsLayout(store.get('viewMode'));
+function setSpellLanguage(lang) {
+    mainWindows.forEach(win => {
+        win.webContents.session.setSpellCheckerLanguages([lang]);
     });
 }
 
-function setupViews() {
-    const sharedSession = session.fromPartition('persist:ksuite_shared');
-    const urls = [
-        store.get('mainApp') === 'manager' ? 'https://manager.infomaniak.com/' : 'https://ksuite.infomaniak.com/',
-        'https://mail.infomaniak.com/',
-        'https://kdrive.infomaniak.com/',
-        'https://www.swisstransfer.com/fr'
-    ];
-
-    for (let i = 0; i < 4; i++) {
-        const view = new BrowserView({
-            webPreferences: {
-                session: sharedSession,
-                preload: path.join(__dirname, '../preload/preload.js')
-            }
-        });
-        view.webContents.loadURL(urls[i]);
-        views.push(view);
+// --- Gestion des Paramètres (IPC) ---
+function openSettings() {
+    if (mainWindows.length > 0) {
+        mainWindows[0].webContents.send('open-settings', store.store);
     }
-    
-    mainWindow.webContents.on('did-finish-load', () => {
-        updateViewsLayout(store.get('viewMode'));
-        mainWindow.webContents.send('app-ready');
-    });
 }
 
-// --- MISE EN PAGE AVEC BORDURES ---
-function updateViewsLayout(mode) {
-    if (!mainWindow) return;
-    const bounds = mainWindow.getContentBounds();
-    const contentHeight = bounds.height - TOOLBAR_HEIGHT;
-    const width = bounds.width;
+ipcMain.on('get-settings', (event) => {
+    event.reply('settings-loaded', store.store);
+});
 
-    views.forEach(v => { try { mainWindow.removeBrowserView(v); } catch(e) {} });
+ipcMain.on('save-settings', (event, newSettings) => {
+    store.set(newSettings);
+    if (newSettings.theme) setTheme(newSettings.theme);
+    if (newSettings.zoomLevel !== undefined) {
+        mainWindows.forEach(win => win.webContents.setZoomLevel(newSettings.zoomLevel));
+    }
+    event.reply('settings-loaded', store.store);
+});
 
-    if (mode === 1) {
-        mainWindow.addBrowserView(views[0]);
-        views[0].setBounds({ x: 0, y: TOOLBAR_HEIGHT, width: width, height: contentHeight });
-    } else if (mode === 2) {
-        const splitPos = Math.floor(width * dividerX);
-        mainWindow.addBrowserView(views[0]);
-        mainWindow.addBrowserView(views[1]);
-        
-        // Bordure fine simulée par l'espacement
-        views[0].setBounds({ x: 0, y: TOOLBAR_HEIGHT, width: splitPos - BORDER_SIZE, height: contentHeight });
-        views[1].setBounds({ x: splitPos + BORDER_SIZE, y: TOOLBAR_HEIGHT, width: width - (splitPos + BORDER_SIZE), height: contentHeight });
-    } else if (mode === 4) {
-        const w2 = Math.floor(width / 2);
-        const h2 = Math.floor(contentHeight / 2);
-        views.forEach((v, i) => {
-            mainWindow.addBrowserView(v);
-            const r = i < 2 ? 0 : h2;
-            const c = i % 2 === 0 ? 0 : w2;
+ipcMain.handle('change-download-path', async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+    if (!result.canceled && result.filePaths.length > 0) {
+        store.set('downloadPath', result.filePaths[0]);
+        return result.filePaths[0];
+    }
+    return store.get('downloadPath');
+});
+
+ipcMain.on('logout', () => {
+    console.log("Déconnexion demandée");
+});
+
+ipcMain.on('open-downloads-folder', () => {
+    const pathToOpen = store.get('downloadPath');
+    shell.openPath(pathToOpen);
+});
+
+function setTheme(theme) {
+    store.set('theme', theme);
+    if (theme === 'dark') nativeTheme.themeSource = 'dark';
+    else if (theme === 'light') nativeTheme.themeSource = 'light';
+    else nativeTheme.themeSource = 'system';
+    mainWindows.forEach(win => win.webContents.send('theme-changed', theme));
+}
+
+// --- Initialisation ---
+app.whenReady().then(async () => {
+    createMenu();
+    setTheme(store.get('theme'));
+
+    try {
+        const token = await AuthManager.getToken();
+        if (!token) {
+            const loginWin = createWindow('about:blank', { width: 550, height: 650, isAuth: true, resizable: false, alwaysOnTop: true });
+            loginWin.loadURL(`data:text/html;charset=utf-8,<html><body style="font-family:sans-serif;text-align:center;padding:50px;"><h2>🔐 Connexion</h2><p>Initialisation...</p></body></html>`);
             
-            // On réduit chaque fenêtre de 1px pour laisser apparaître le fond (bordure)
-            v.setBounds({ 
-                x: c + BORDER_SIZE, 
-                y: TOOLBAR_HEIGHT + r + BORDER_SIZE, 
-                width: w2 - (BORDER_SIZE * 2), 
-                height: h2 - (BORDER_SIZE * 2) 
-            });
-        });
+            const authResult = await AuthManager.startAuth(loginWin);
+            if (authResult.type === 'redirect_needed') {
+                loginWin.loadURL(authResult.url);
+            }
+        } else {
+            createWindow();
+        }
+    } catch (err) {
+        console.error("Erreur init:", err);
+        const errorWin = new BrowserWindow({ width: 400, height: 300 });
+        errorWin.loadURL(`data:text/html;charset=utf-8,<html><body style="font-family:sans-serif;text-align:center;padding:20px;color:red;"><h1>Erreur</h1><p>${err.message}</p></body></html>`);
     }
-}
 
-function setupSystemTray() {
-    tray = new Tray(path.join(__dirname, '../../assets/icons/icon.ico'));
-    const contextMenu = Menu.buildFromTemplate([
-        { label: 'Ouvrir K-Suite', click: () => mainWindow.show() },
-        { type: 'separator' },
-        { label: 'Quitter', click: () => { app.isQuiting = true; app.quit(); } }
-    ]);
-    tray.setContextMenu(contextMenu);
-}
-
-function applySettings() {
-    nativeTheme.themeSource = store.get('theme');
-}
-
-function setupDownloadManager() {
-    session.fromPartition('persist:ksuite_shared').on('will-download', (event, item) => {
-        item.setSavePath(path.join(store.get('downloadPath'), item.getFilename()));
-    });
-}
-
-// --- IPC CHANNELS ---
-ipcMain.on('update-divider', (e, xPercent) => {
-    dividerX = xPercent;
-    updateViewsLayout(store.get('viewMode'));
+    setInterval(() => {
+        const interval = store.get('autoRefreshInterval');
+        if (interval > 0) {
+            mainWindows.forEach(win => {
+                win.webContents.executeJavaScript(`if (typeof window.refreshKSuiteData === 'function') window.refreshKSuiteData();`);
+            });
+        }
+    }, store.get('autoRefreshInterval') || 0);
 });
 
-ipcMain.on('go-home', () => {
-    const urls = [
-        store.get('mainApp') === 'manager' ? 'https://manager.infomaniak.com/' : 'https://ksuite.infomaniak.com/',
-        'https://mail.infomaniak.com/',
-        'https://kdrive.infomaniak.com/',
-        'https://www.swisstransfer.com/fr'
-    ];
-    views.forEach((v, i) => v.webContents.loadURL(urls[i]));
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
 });
 
-ipcMain.on('change-view-mode', (e, mode) => {
-    store.set('viewMode', mode);
-    updateViewsLayout(mode);
-});
-
-ipcMain.on('search-url', (e, url) => {
-    const target = url.startsWith('http') ? url : `https://www.infomaniak.com/fr/recherche?q=${encodeURIComponent(url)}`;
-    views[0].webContents.loadURL(target);
-});
-
-ipcMain.handle('get-settings', () => store.store);
-ipcMain.on('save-setting', (e, key, value) => {
-    store.set(key, value);
-    if (key === 'theme') applySettings();
-});
-
-ipcMain.handle('select-folder', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory']
-    });
-    return result.canceled ? null : result.filePaths[0];
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });

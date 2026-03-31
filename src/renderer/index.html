@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>K-Suite Workstation</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-    <!-- ÉCRAN DE DÉMARRAGE (Splash Screen) -->
+    <!-- ÉCRAN DE DÉMARRAGE -->
     <div id="splash-screen">
-        <img src="../../assets/icons/K-Suite.png" alt="Logo K-Suite" id="splash-logo">
+        <img src="assets/icons/K-Suite.png" alt="Logo K-Suite" id="splash-logo">
         <div class="loader"></div>
         <h1>Bienvenue !</h1>
         <p>Initialisation de K-Suite...<br>Merci pour votre patience</p>
@@ -20,59 +18,64 @@
 
     <!-- CONTENEUR PRINCIPAL -->
     <div id="app-container" style="display: none;">
-
+        
         <header class="toolbar">
             <div class="branding">
-                <img src="../../assets/icons/K-Suite.png" alt="K-Suite" class="app-icon-svg">
+                <img src="assets/icons/K-Suite.png" alt="K-Suite" class="app-icon-svg">
                 <span>K-Suite</span>
             </div>
 
             <div class="search-bar">
                 <input type="text" id="url-input" placeholder="Lien kDrive ou recherche Infomaniak...">
                 <button id="search-btn">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor"
-                            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
                 </button>
             </div>
 
             <div class="window-controls">
                 <button id="btn-view-1" class="view-btn active" title="1 Volet">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor"
-                            d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" /></svg>
                 </button>
                 <button id="btn-view-2" class="view-btn" title="2 Volets">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor"
-                            d="M19 5v14h-7V5h7m0-2h-7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 0H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5V3z" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 5v14h-7V5h7m0-2h-7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 0H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5V3z" /></svg>
                 </button>
-                <button id="btn-view-4" class="view-btn" title="4 Volets">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor" d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8z" />
-                    </svg>
+                <!-- Bouton 4 volets présent mais désactivé logiquement si besoin -->
+                <button id="btn-view-4" class="view-btn" title="4 Volets (Bientôt)">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 3h8v8H3V3m10 0h8v8h-8V3M3 13h8v8H3v-8m10 0h8v8h-8v-8z" /></svg>
                 </button>
+                
                 <button id="settings-btn" title="Paramètres">
-                    <svg viewBox="0 0 24 24" width="18" height="18">
-                        <path fill="currentColor"
-                            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" /></svg>
                 </button>
+            </div>
+
+            <div class="user-info">
+                <!-- Bouton Téléchargements -->
+                <div class="download-container">
+                    <button id="btn-downloads" title="Téléchargements" class="icon-btn">
+                        📥
+                        <span id="dl-badge" class="dl-badge" style="display:none;">0%</span>
+                    </button>
+                    <!-- Liste déroulante -->
+                    <div id="dl-dropdown" class="dl-dropdown">
+                        <div class="dl-header">Téléchargements récents</div>
+                        <div id="dl-list">Aucun téléchargement récent.</div>
+                        <div class="dl-footer" onclick="openDownloadsFolder()">
+                            <span>Ouvrir le dossier</span>
+                        </div>
+                    </div>
+                </div>
+                <span id="user-email">Utilisateur</span>
+                <div class="status-indicator online"></div>
             </div>
         </header>
 
-        <!-- ZONE DES VOLETS (Placeholders pour Electron) -->
+        <!-- ZONE DES VOLETS -->
         <main id="views-container" class="grid-1">
-            <div class="view-placeholder" id="placeholder-1">Initialisation...</div>
-            <div class="view-placeholder" id="placeholder-2"></div>
-            <div class="view-placeholder" id="placeholder-3"></div>
-            <div class="view-placeholder" id="placeholder-4"></div>
+            <!-- Les webviews seront injectés ici par renderer.js -->
         </main>
 
-        <!-- MODALE DES PARAMÈTRES -->
+        <!-- MODALE PARAMÈTRES -->
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -90,9 +93,9 @@
                     </div>
                     <div class="setting-item">
                         <label>Dossier de téléchargement</label>
-                        <div class="path-group">
-                            <input type="text" id="input-download-path" readonly>
-                            <button id="btn-browse-path">Parcourir</button>
+                        <div class="path-selector">
+                            <input type="text" id="setting-download-path" readonly>
+                            <button id="btn-browse-path">...</button>
                         </div>
                     </div>
                     <div class="setting-item">
@@ -104,16 +107,17 @@
                     <div class="setting-item">
                         <label class="switch-label">
                             <input type="checkbox" id="check-background">
-                            Continuer en arrière-plan à la fermeture
+                            Continuer en arrière-plan
                         </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="save-settings-btn" class="btn-primary">Enregistrer</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-    <script src="renderer.js"></script>
-
-
+    <script src="app.js"></script>
 </body>
-
 </html>
