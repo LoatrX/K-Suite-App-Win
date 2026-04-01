@@ -1,28 +1,46 @@
-# 🚀 K-Suite Workstation (Windows)
+<h1>🌟 K‑Suite App by LoatrX</h1>
 
-**K-Suite Workstation** est une application de productivité basée sur Electron, conçue pour centraliser et optimiser l'utilisation de l'écosystème Infomaniak (Manager, Mail, kDrive, SwissTransfer). 
+This project is currently under active development.
+New features are on the way — I’m working hard to bring them to you!
 
-L'application permet une navigation multi-volets avec une session partagée, une barre de recherche intelligente et une gestion personnalisée des téléchargements.
+<h3>🔒 NO MALICIOUS CODE AND NO PERSONAL DATA COLLECTION ARE PRESENT IN THIS APPLICATION!</h3>
+you can 
 
----
+<h4>New updates coming soon !</h4><br><br>
 
-## 🛠 Prérequis pour le test
 
-Avant de commencer, assurez-vous d'avoir installé les outils suivants sur votre PC :
+<h2>How to install ❓</h2>
 
-* **Node.js** (version 18 ou supérieure recommandée) : [Télécharger ici](https://nodejs.org/)
-* **Git** : [Télécharger ici](https://git-scm.com/)
+Just download the last release and run it simple. 😜
 
----
 
-## 🚀 Comment tester l'application sur votre PC
 
-Suivez ces étapes simples pour lancer l'application en mode développement :
+<br><hr><br>
 
-téléchargez le projet et ouvrez un terminal (PowerShell ou CMD).
+<h2>🛠 Prerequisites for Development Testing</h2>
 
-Entrez le chemin du dossier,
-(example : cd C:\Users\nom\Desktop\K-Suite_Win_Setup )
+<p>Before getting started, make sure you have the following tools installed on your PC:</p>
 
-Puis entrez la commande :
-npm start
+<ul>
+  <li><b>Node.js</b> (version 18 or higher recommended): <a href="https://nodejs.org/">Download here</a></li>
+  <li><b>Git</b>: <a href="https://git-scm.com/">Download here</a></li>
+</ul>
+
+<hr>
+
+<h2>🚀 How to Test the Application on Your PC</h2>
+<p>(personal note)</p>
+
+<p>Follow these simple steps to run the application in development mode:</p>
+
+<p>Download the project and open a terminal (PowerShell or CMD).</p>
+
+<p>Navigate to the project folder:<br>
+<pre><code>cd C:\Users\name\Desktop\K-Suite_Win_Setup</code></pre>
+</p>
+
+<p>Then run the command:</p>
+
+<pre><code>npm start
+</code></pre>
+
