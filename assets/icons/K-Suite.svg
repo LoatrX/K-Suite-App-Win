@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Calque_1" data-name="Calque 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 456 455">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #0d6b7d;
+      }
+
+      .cls-2 {
+        fill: url(#Dégradé_sans_nom_7);
+      }
+
+      .cls-3 {
+        fill: url(#Dégradé_sans_nom_6);
+      }
+
+      .cls-4 {
+        fill: #892d7e;
+      }
+
+      .cls-5 {
+        fill: url(#Dégradé_sans_nom_44);
+      }
+    </style>
+    <linearGradient id="Dégradé_sans_nom_44" data-name="Dégradé sans nom 44" x1="37.84" y1="227.44" x2="446.95" y2="227.44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1ad7fa"/>
+      <stop offset="1" stop-color="#397cfd"/>
+    </linearGradient>
+    <linearGradient id="Dégradé_sans_nom_7" data-name="Dégradé sans nom 7" x1="74.15" y1="4.67" x2="74.15" y2="450.28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e347d2"/>
+      <stop offset="1" stop-color="#8d5cfc"/>
+    </linearGradient>
+    <linearGradient id="Dégradé_sans_nom_6" data-name="Dégradé sans nom 6" x1="21.43" y1="227.5" x2="452.65" y2="227.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e741d1"/>
+      <stop offset="1" stop-color="#fa8257"/>
+    </linearGradient>
+  </defs>
+  <path class="cls-5" d="M116.1,450.28l-78.26-56.97L270.44,19.76c5.82-9.32,16.28-15.31,27.49-15.18h123.07c20.17.25,32.69,22.38,22.1,39.08l-234.7,372.81c-20.68,33.12-46.04,33.06-92.31,33.81Z"/>
+  <path class="cls-1" d="M144.94,216.59l-39.22,233.7,12.04-.07c17.42.23,41.14-2.04,39.13-26.4"/>
+  <rect class="cls-2" x="3.35" y="4.67" width="141.59" height="445.62" rx="29.17" ry="29.17"/>
+  <path class="cls-4" d="M144.94,216.59L48.32,4.67l-19.51-.02C12.54,6.2,4.24,20.24,10.1,30.28"/>
+  <path class="cls-3" d="M115.45,4.55l-86.63.1c-6.39.44-9.31,6.91-6.02,12.28l255.76,419.18c5.97,9.23,16.41,14.64,27.62,14.32l120.95-.03c20.16-.57,32.32-22.9,21.47-39.43L208.06,37.04C186.85,4.26,161.72,4.55,115.45,4.55Z"/>
+</svg>

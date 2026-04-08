@@ -191,3 +191,73 @@ webview { width: 100%; height: 100%; border: none; }
 .modal-actions { margin-top: 20px; text-align: right; }
 .btn-primary { background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 .btn-primary:hover { opacity: 0.9; }
+
+
+/* --- SPLASH SCREEN & LOADER --- */
+#splash-screen {
+    position: fixed;
+    inset: 0;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+.loader-container {
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#splash-logo {
+    width: 100px;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 122, 255, 0.1);
+    border-top: 3px solid #007aff;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    animation: spin 1s linear infinite;
+}
+
+#loader-text {
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(0.95); } }
+
+/* --- ÉTAT CACHÉ --- */
+.hidden {
+    display: none !important;
+}
+
+#app-container {
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+/* --- LE RESTE DU CSS (Bordures et Toolbar) --- */
+#views-container {
+    background-color: #e0e0e0;
+    display: grid;
+    gap: 1px;
+    height: calc(100vh - 51px);
+}
+
+.toolbar {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
